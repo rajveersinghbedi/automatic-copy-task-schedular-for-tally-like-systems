@@ -33,7 +33,7 @@ An automated backup utility designed specifically for Tally-like accounting syst
 
 ## 🚀 Installation
 
-1. Download the `release v1.0.txt` file from this repository
+1. Download the `release-v1.0.txt` file from this repository
 2. Rename it to `backup-utility.bat`
 3. Place it in a convenient location (e.g., `C:\BackupScripts\`)
 4. Modify the configuration section according to your needs
@@ -85,10 +85,26 @@ Use Windows Task Scheduler to run the backup automatically:
 ```
 project-root/
 ├── backup-utility.bat          # Main backup script
+├── release-v1.0.txt            # Release file (rename to .bat to use)
 ├── README.md                   # This documentation
+├── CONTRIBUTING.md             # Contribution guidelines
+├── CODE_OF_CONDUCT.md          # Code of conduct
+├── SECURITY.md                 # Security policy
+├── CHANGELOG.md                # Change history
+├── USAGE_EXAMPLE.md            # Usage examples
 ├── LICENSE                     # GPL v3 license
-└── docs/                       # Documentation (optional)
-    └── configuration-guide.md
+├── .gitignore                  # Git ignore rules
+├── docs/                       # Documentation directory
+│   ├── configuration-guide.md
+│   ├── batch-scripting-guide.md
+│   └── quick-start-guide.md
+└── .github/                    # GitHub configuration
+    ├── FUNDING.yml
+    ├── ISSUE_TEMPLATE/
+    │   ├── bug_report.md
+    │   └── feature_request.md
+    └── PULL_REQUEST_TEMPLATE/
+        └── pull_request_template.md
 ```
 
 ## 📊 Example Output

@@ -1,0 +1,95 @@
+@echo off
+setlocal enabledelayedexpansion
+
+:: === USER CONFIGURATION SECTION ===
+set "source=C:\path\to\your\source"
+set "target_root=D:\path\to\target"         :: Target folder for ZIP files
+set "max_backups=5"                        :: Max number of ZIP backups to keep
+set "log_folder_override="                 :: Optional: custom log folder (leave empty for default ; Default: logs folder next to script)
+set "zip_prefix=backup_"                   :: Prefix for ZIP file names
+set "log_prefix=backup_process_"           :: Prefix for log file names
+:: ====================================
+
+:: === LOGGING SETUP ===
+if defined log_folder_override (
+    set "log_folder=%log_folder_override%"
+) else (
+    set "log_folder=%~dp0logs"             
+)
+
+:: Create log folder if it doesn't exist
+if not exist "%log_folder%" mkdir "%log_folder%"
+
+:: Generate log file name based on current date-time
+for /f "tokens=2 delims==." %%a in ('wmic os get localdatetime /value') do set datetime_log=%%a
+call :FormatDateTime %datetime_log%
+set "log_file=%log_folder%\%log_prefix%%log_date%_%log_time%.txt"
+
+echo [START] File copy and zip started at %date% %time% >> "%log_file%"
+
+:: === TIMESTAMP FOR FOLDER AND ZIP FILE ===
+for /f "tokens=2 delims==." %%a in ('wmic os get localdatetime /value') do set datetime=%%a
+call :FormatDateTime %datetime% folderName
+
+set "new_folder=%target_root%\%folderName%"
+set "zip_file=%target_root%\%zip_prefix%%folderName%.zip"
+
+:: === CREATE NEW FOLDER AND COPY FILES ===
+mkdir "%new_folder%" >> "%log_file%" 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] Created new folder: %new_folder% >> "%log_file%"
+) else (
+    echo [ERROR] Failed to create folder: %new_folder% >> "%log_file%"
+    goto end
+)
+
+echo [INFO] Copying files from %source% to %new_folder% >> "%log_file%"
+copy /Y "%source%\*" "%new_folder%" >> "%log_file%" 2>&1
+if %errorlevel% equ 0 (
+    echo [SUCCESS] Files successfully copied. >> "%log_file%"
+) else (
+    echo [ERROR] Error occurred while copying files. >> "%log_file%"
+)
+
+:: === CREATE ZIP ARCHIVE IN TARGET FOLDER ===
+echo [INFO] Creating ZIP archive: %zip_file% >> "%log_file%"
+powershell.exe -Command "Compress-Archive -Path '%new_folder%' -DestinationPath '%zip_file%' -Force" >> "%log_file%" 2>&1
+if %errorlevel% equ 0 (
+    echo [SUCCESS] ZIP archive created successfully. >> "%log_file%"
+) else (
+    echo [ERROR] Failed to create ZIP archive. >> "%log_file%"
+)
+
+:: === OPTIONAL: Delete temporary folder after zipping ===
+rmdir /s /q "%new_folder%" >> "%log_file%" 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] Deleted temporary folder: %new_folder% >> "%log_file%"
+)
+
+:: === CLEANUP: KEEP ONLY LAST N BACKUPS IN TARGET FOLDER ===
+echo [INFO] Cleaning up old backups... Keeping last %max_backups% backups. >> "%log_file%"
+
+pushd "%target_root%"
+set count=0
+
+:: List all matching ZIP files sorted by date (oldest first)
+for /f "delims=" %%f in ('dir /b /o-d "%zip_prefix%*.zip" 2^>nul') do (
+    set /a count+=1
+    if !count! GTR %max_backups% (
+        echo [INFO] Deleting old backup: %%f >> "%log_file%"
+        del "%%f" >> "%log_file%" 2>&1
+    )
+)
+popd
+
+:end
+echo [END] Process ended at %date% %time% >> "%log_file%"
+echo Log saved to: %log_file%
+
+exit /b
+
+:: === Subroutine to format date-time as dd-mm-yyyy hh-mm-ss ===
+:FormatDateTime
+set "dt=%1"
+set "%2=%dt:~6,2%-%dt:~4,2%-%dt:~0,4% %dt:~8,2%-%dt:~10,2%-%dt:~12,2%"
+exit /b
